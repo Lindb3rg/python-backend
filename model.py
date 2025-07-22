@@ -17,8 +17,6 @@ class Product(ProductBase, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     authentication_string: str
-    
-    # Relationship to OrderDetail
     order_details: list["OrderDetail"] = Relationship(back_populates="product")
 
 class ProductPublic(ProductBase):
@@ -36,10 +34,6 @@ class ProductUpdate(ProductBase):
     updated_at: datetime | None = None
     authentication_string: str | None = None
     out_of_stock: bool | None = None
-
-
-
-
 
 
 
@@ -109,7 +103,6 @@ class OrderDetail(OrderDetailBase, table=True):
     id: int | None = Field(default=None, primary_key=True)
     product_id: int = Field(foreign_key="product.id")
     order_id: int = Field(foreign_key="order.id")
-    
     product: Product = Relationship(back_populates="order_details")
     order: Order = Relationship(back_populates="order_details")
 
