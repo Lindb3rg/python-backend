@@ -1,24 +1,25 @@
 from typing import Optional
 from datetime import datetime, date
-from sqlmodel import Field, SQLModel,Relationship
+from sqlmodel import Field, SQLModel, Relationship
 
 class ProductBase(SQLModel):
     name: str = Field(max_length=255, index=True)
     category: str = Field(max_length=255, index=True)
     unit_price: float
-    quantity: int
+    stock_quantity: int
     out_of_stock: bool = False
-    
-    
-    # Relationship to order_details
-    # order_details: list["OrderDetail"] = Relationship(back_populates="product")
 
 
 class Product(ProductBase, table=True):
+    __tablename__ = "product"
+    
     id: int | None = Field(default=None, primary_key=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     authentication_string: str
+    
+    # Relationship to OrderDetail
+    order_details: list["OrderDetail"] = Relationship(back_populates="product")
 
 class ProductPublic(ProductBase):
     id: int
@@ -31,10 +32,12 @@ class ProductUpdate(ProductBase):
     name: str | None = None
     category: str | None = None
     unit_price: float | None = None
-    quantity: int | None = None
+    stock_quantity: int | None = None
     updated_at: datetime | None = None
     authentication_string: str | None = None
     out_of_stock: bool | None = None
+
+
 
 
 
@@ -44,17 +47,18 @@ class OrderBase(SQLModel):
     customer_name: str = Field(max_length=100)
     customer_email: str = Field(max_length=100)
     status: str = Field(max_length=100, default="pending")
-    
-    
-    # Relationship to order_details
-    # order_details: list["OrderDetail"] = Relationship(back_populates="order")
+    total_amount: float
 
 
 class Order(OrderBase, table=True):
+    __tablename__ = "order"
+    
     id: int | None = Field(default=None, primary_key=True)
     order_date: date = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     authentication_string: str
+
+    order_details: list["OrderDetail"] = Relationship(back_populates="order")
 
 
 class OrderPublic(OrderBase):
@@ -70,22 +74,51 @@ class OrderUpdate(OrderBase):
     status: str | None = None
     updated_at: datetime | None = None
     authentication_string: str | None = None
+    total_amount: float | None = None
+
+class OrderResponse(OrderBase):
+    id: int
+    customer_name: str
+    customer_email: str
+    status: str
+    total_amount: float
+    order_date: datetime
+    
+    class Config:
+        from_attributes = True
 
 
 
 
-# class OrderDetail(SQLModel, table=True):
-#     __tablename__ = "order_details"
+
+
+
+class OrderDetailBase(SQLModel):
+    quantity: int
+    unit_price: float
+    subtotal: float
+
+
+class OrderDetail(OrderDetailBase, table=True):
+    __tablename__ = "order_details"
     
-#     id: Optional[int] = Field(default=None, primary_key=True)
-#     product_id: int = Field(foreign_key="product.id")
-#     order_id: int = Field(foreign_key="order.id")
-#     quantity: int
-#     unit_price: float
-#     subtotal: float
+    id: int | None = Field(default=None, primary_key=True)
+    product_id: int = Field(foreign_key="product.id")
+    order_id: int = Field(foreign_key="order.id")
     
-#     # Relationships
-#     product: Optional[Product] = Relationship(back_populates="order_details")
-#     order: Optional[Order] = Relationship(back_populates="order_details")
-    
-    
+    product: Product = Relationship(back_populates="order_details")
+    order: Order = Relationship(back_populates="order_details")
+
+
+class OrderDetailPublic(OrderDetailBase):
+    id: int
+
+class OrderDetailCreate(OrderDetailBase):
+    product_id: int
+    order_id: int
+
+
+class OrderDetailUpdate(OrderDetailBase):
+    quantity: int | None = None
+    unit_price: float | None = None
+    subtotal: float | None = None

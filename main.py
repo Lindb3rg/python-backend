@@ -11,7 +11,8 @@ from model import (Product,
                    Order,
                    OrderCreate,
                    OrderPublic,
-                   OrderUpdate)
+                   OrderUpdate,
+                   OrderResponse)
 
 from dotenv import load_dotenv
 
@@ -103,8 +104,9 @@ def update_product(product_id: int, product: ProductUpdate, session: SessionDep)
 
 
 
-@app.post("/orders/", response_model=OrderPublic)
+@app.post("/orders/", response_model=OrderResponse)
 def create_order(create_order: OrderCreate, session: SessionDep):
+    
     db_order = Order.model_validate(create_order)
     session.add(db_order)
     session.commit()
