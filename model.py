@@ -5,8 +5,8 @@ from sqlmodel import Field, SQLModel, Relationship
 class ProductBase(SQLModel):
     name: str = Field(max_length=255, index=True)
     category: str = Field(max_length=255, index=True)
-    unit_price: float
-    stock_quantity: int
+    unit_price: float = 0
+    stock_quantity: int = 0
     out_of_stock: bool = False
 
 
@@ -47,7 +47,7 @@ class OrderBase(SQLModel):
     customer_name: str = Field(max_length=100)
     customer_email: str = Field(max_length=100)
     status: str = Field(max_length=100, default="pending")
-    total_amount: float
+    
 
 
 class Order(OrderBase, table=True):
@@ -57,14 +57,16 @@ class Order(OrderBase, table=True):
     order_date: date = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     authentication_string: str
-
+    total_amount: float
     order_details: list["OrderDetail"] = Relationship(back_populates="order")
 
 
 class OrderPublic(OrderBase):
     id: int
+    total_amount: float
 
 class OrderCreate(OrderBase):
+    items: list["OrderDetailRequest"]
     authentication_string: str
 
 
@@ -83,13 +85,10 @@ class OrderResponse(OrderBase):
     status: str
     total_amount: float
     order_date: datetime
+    authentication_string: str
     
     class Config:
         from_attributes = True
-
-
-
-
 
 
 
@@ -98,6 +97,11 @@ class OrderDetailBase(SQLModel):
     unit_price: float
     subtotal: float
 
+class OrderDetailRequest(SQLModel):
+    product_id: int
+    quantity: int
+    
+    
 
 class OrderDetail(OrderDetailBase, table=True):
     __tablename__ = "order_details"

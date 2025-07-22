@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+from datetime import datetime
 from typing import Union,Annotated
 from fastapi import FastAPI,Depends, HTTPException,Query
 from sqlmodel import create_engine,SQLModel,Session,select
@@ -12,9 +13,12 @@ from model import (Product,
                    OrderCreate,
                    OrderPublic,
                    OrderUpdate,
-                   OrderResponse)
+                   OrderResponse,
+                   OrderDetail)
 
 from dotenv import load_dotenv
+
+from db_tools import seed_products
 
 load_dotenv()
 
@@ -41,12 +45,18 @@ SessionDep = Annotated[Session, Depends(get_session)]
 
 
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     create_db_and_tables()
+    with Session(engine) as session:
+        seed_products(session)
+    
     yield
-    drop_db_and_tables()
 
+    drop_db_and_tables()
+    
+    
 app = FastAPI(lifespan=lifespan)
 
 
@@ -105,13 +115,84 @@ def update_product(product_id: int, product: ProductUpdate, session: SessionDep)
 
 
 @app.post("/orders/", response_model=OrderResponse)
-def create_order(create_order: OrderCreate, session: SessionDep):
+def create_order(order_data: OrderCreate, session: SessionDep):
     
-    db_order = Order.model_validate(create_order)
-    session.add(db_order)
-    session.commit()
-    session.refresh(db_order)
-    return db_order
+    total_amount = 0.0
+    order_items_data = []
+    
+    print("ORDERDATA:",order_data)
+    
+    for item in order_data.items:
+        
+        product = session.get(Product, item.product_id)
+        if not product:
+            raise HTTPException(status_code=404, detail=f"Product with ID {item.product_id} not found")
+
+        if product.stock_quantity < item.quantity:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Insufficient stock for {product.name}. Available: {product.stock_quantity}, Requested: {item.quantity}"
+            )
+        
+        subtotal = product.unit_price * item.quantity
+        total_amount += subtotal
+        
+        order_items_data.append({
+            "product": product,
+            "quantity": item.quantity,
+            "unit_price": product.unit_price,
+            "subtotal": subtotal
+        })
+    
+    try:
+        
+        # new_order = Order.model_validate(order_items_data)
+        
+        new_order = Order(
+            customer_name=order_data.customer_name,
+            customer_email=order_data.customer_email,
+            status="pending",
+            authentication_string=order_data.authentication_string,
+            total_amount=total_amount
+        )
+        
+        
+        
+        session.add(new_order)
+        session.flush()
+
+
+        
+        # Step 3: Create order items
+        for item_data in order_items_data:
+            order_item = OrderDetail(
+                order_id=new_order.id,
+                product_id=item_data["product"].id,
+                quantity=item_data["quantity"],
+                unit_price=item_data["unit_price"],
+                subtotal=item_data["subtotal"]
+            )
+            session.add(order_item)
+        
+        # Step 4: Update product stock quantities
+        for item_data in order_items_data:
+            product = item_data["product"]
+            product.stock_quantity -= item_data["quantity"]
+            product.updated_at = datetime.utcnow()
+        
+        # Step 5: Commit all changes
+        session.commit()
+        session.refresh(new_order)
+        
+        return new_order
+        
+    except Exception as e:
+        session.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to create order: {str(e)}")
+    
+    
+    
+    
 
 
 @app.get("/orders/", response_model=list[OrderPublic])
