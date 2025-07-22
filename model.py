@@ -58,6 +58,7 @@ class Order(OrderBase, table=True):
 class OrderPublic(OrderBase):
     id: int
     total_amount: float
+    order_details: list
 
 class OrderCreate(OrderBase):
     items: list["OrderDetailRequest"]

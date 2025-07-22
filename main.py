@@ -242,7 +242,3 @@ def update_order(order_id: int, order: OrderUpdate, session: SessionDep):
     session.refresh(order_db)
     return order_db
 
-
-
-
-
