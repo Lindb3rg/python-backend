@@ -51,6 +51,7 @@ async def lifespan(app: FastAPI):
     
     yield
 
+    # Use this to drop DB everytime the app is closed 
     drop_db_and_tables()
     
     

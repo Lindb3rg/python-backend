@@ -24,8 +24,8 @@ def seed_products(session):
     {"name": "Whiteboard Marker", "category": "Stationery", "unit_price": 3.25, "quantity": 90},
     {"name": "Tape Dispenser", "category": "Office", "unit_price": 7.50, "quantity": 40}
 ]
-    
-    # Create and add products
+
+
     for product_data in sample_products:
         product = Product(
             name=product_data["name"],

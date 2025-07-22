@@ -2,6 +2,9 @@
 from datetime import datetime, date
 from sqlmodel import Field, SQLModel, Relationship
 
+
+
+
 class ProductBase(SQLModel):
     name: str = Field(max_length=255, index=True)
     category: str = Field(max_length=255, index=True)
@@ -11,16 +14,17 @@ class ProductBase(SQLModel):
 
 
 class Product(ProductBase, table=True):
-    __tablename__ = "product"
-    
+    __tablename__ = "product"    
     id: int | None = Field(default=None, primary_key=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     authentication_string: str
     order_details: list["OrderDetail"] = Relationship(back_populates="product")
 
+
 class ProductPublic(ProductBase):
     id: int
+
 
 class ProductCreate(ProductBase):
     authentication_string: str
@@ -37,16 +41,17 @@ class ProductUpdate(ProductBase):
 
 
 
+
+
+
 class OrderBase(SQLModel):
     customer_name: str = Field(max_length=100)
     customer_email: str = Field(max_length=100)
     status: str = Field(max_length=100, default="pending")
     
-
-
+    
 class Order(OrderBase, table=True):
     __tablename__ = "order"
-    
     id: int | None = Field(default=None, primary_key=True)
     order_date: date = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
@@ -59,6 +64,7 @@ class OrderPublic(OrderBase):
     id: int
     total_amount: float
     order_details: list
+    
 
 class OrderCreate(OrderBase):
     items: list["OrderDetailRequest"]
@@ -72,6 +78,7 @@ class OrderUpdate(OrderBase):
     updated_at: datetime | None = None
     authentication_string: str | None = None
     total_amount: float | None = None
+
 
 class OrderResponse(OrderBase):
     id: int
@@ -87,20 +94,24 @@ class OrderResponse(OrderBase):
 
 
 
+
+
+
+
+
 class OrderDetailBase(SQLModel):
     quantity: int
     unit_price: float
     subtotal: float
+
 
 class OrderDetailRequest(SQLModel):
     product_id: int
     quantity: int
     
     
-
 class OrderDetail(OrderDetailBase, table=True):
     __tablename__ = "order_details"
-    
     id: int | None = Field(default=None, primary_key=True)
     product_id: int = Field(foreign_key="product.id")
     order_id: int = Field(foreign_key="order.id")
@@ -110,6 +121,7 @@ class OrderDetail(OrderDetailBase, table=True):
 
 class OrderDetailPublic(OrderDetailBase):
     id: int
+    
 
 class OrderDetailCreate(OrderDetailBase):
     product_id: int
