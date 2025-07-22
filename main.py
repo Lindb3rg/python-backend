@@ -3,22 +3,17 @@ from datetime import datetime
 from typing import Annotated
 from fastapi import FastAPI,Depends, HTTPException,Query
 from sqlmodel import create_engine,SQLModel,Session,select
-
-from model import (Product,
-                   ProductCreate,
-                   ProductPublic,
-                   ProductUpdate,
-                   Order,
-                   OrderCreate,
-                   OrderPublic,
-                   OrderUpdate,
-                   OrderResponse,
-                   OrderDetail)
-
-
 from db_tools import seed_products
 
-
+from model import (
+    
+                Product, ProductCreate, ProductPublic, ProductUpdate,
+                   
+                Order, OrderCreate, OrderPublic, OrderUpdate, OrderResponse,
+                   
+                OrderDetail
+                
+                )
 
 
 sqlite_file_name = "database.db"
@@ -37,10 +32,8 @@ def get_session():
     with Session(engine) as session:
         yield session
 
+
 SessionDep = Annotated[Session, Depends(get_session)]
-
-
-
 
 
 @asynccontextmanager
@@ -58,10 +51,11 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 
-""""    
-    Product Routes
 
-"""
+
+
+
+
 
 @app.post("/products/", response_model=ProductPublic)
 def create_product(create_product: ProductCreate, session: SessionDep):
@@ -113,10 +107,10 @@ def update_product(product_id: int, product: ProductUpdate, session: SessionDep)
     return product_db
 
 
-""""    
-    Order Routes
 
-"""
+
+
+
 
 
 @app.post("/orders/", response_model=OrderResponse)
@@ -124,8 +118,6 @@ def create_order(order_data: OrderCreate, session: SessionDep):
     
     total_amount = 0.0
     order_items_data = []
-    
-    print("ORDERDATA:",order_data)
     
     for item in order_data.items:
         
@@ -160,13 +152,10 @@ def create_order(order_data: OrderCreate, session: SessionDep):
         )
         
         
-        
         session.add(new_order)
         session.flush()
 
 
-        
-        
         for item_data in order_items_data:
             order_item = OrderDetail(
                 order_id=new_order.id,
@@ -192,7 +181,6 @@ def create_order(order_data: OrderCreate, session: SessionDep):
         session.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to create order: {str(e)}")
     
-
 
 @app.get("/orders/", response_model=list[OrderPublic])
 def read_orders(
