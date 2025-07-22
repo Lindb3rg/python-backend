@@ -23,3 +23,5 @@ Table order_details {
   unit_price real [not null]
   subtotal real [not null]
 }
+
+

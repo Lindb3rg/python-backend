@@ -1,9 +1,8 @@
 from contextlib import asynccontextmanager
 from datetime import datetime
-from typing import Union,Annotated
+from typing import Annotated
 from fastapi import FastAPI,Depends, HTTPException,Query
 from sqlmodel import create_engine,SQLModel,Session,select
-import os
 
 from model import (Product,
                    ProductCreate,
@@ -16,15 +15,13 @@ from model import (Product,
                    OrderResponse,
                    OrderDetail)
 
-from dotenv import load_dotenv
 
 from db_tools import seed_products
 
-load_dotenv()
 
 
 
-sqlite_file_name = os.getenv("sqlite_file_name")
+sqlite_file_name = "database.db"
 sqlite_url = f"sqlite:///{sqlite_file_name}"
 connect_args = {"check_same_thread": False}
 engine = create_engine(sqlite_url, connect_args=connect_args)
@@ -59,6 +56,11 @@ async def lifespan(app: FastAPI):
     
 app = FastAPI(lifespan=lifespan)
 
+
+""""    
+    Product Routes
+
+"""
 
 @app.post("/products/", response_model=ProductPublic)
 def create_product(create_product: ProductCreate, session: SessionDep):
@@ -110,8 +112,10 @@ def update_product(product_id: int, product: ProductUpdate, session: SessionDep)
     return product_db
 
 
+""""    
+    Order Routes
 
-
+"""
 
 
 @app.post("/orders/", response_model=OrderResponse)
@@ -146,8 +150,6 @@ def create_order(order_data: OrderCreate, session: SessionDep):
     
     try:
         
-        # new_order = Order.model_validate(order_items_data)
-        
         new_order = Order(
             customer_name=order_data.customer_name,
             customer_email=order_data.customer_email,
@@ -163,7 +165,7 @@ def create_order(order_data: OrderCreate, session: SessionDep):
 
 
         
-        # Step 3: Create order items
+        
         for item_data in order_items_data:
             order_item = OrderDetail(
                 order_id=new_order.id,
@@ -174,13 +176,12 @@ def create_order(order_data: OrderCreate, session: SessionDep):
             )
             session.add(order_item)
         
-        # Step 4: Update product stock quantities
+        
         for item_data in order_items_data:
             product = item_data["product"]
             product.stock_quantity -= item_data["quantity"]
             product.updated_at = datetime.utcnow()
         
-        # Step 5: Commit all changes
         session.commit()
         session.refresh(new_order)
         
@@ -189,9 +190,6 @@ def create_order(order_data: OrderCreate, session: SessionDep):
     except Exception as e:
         session.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to create order: {str(e)}")
-    
-    
-    
     
 
 
@@ -218,6 +216,15 @@ def delete_order(order_id: int, session: SessionDep):
     order = session.get(Order, order_id)
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
+    
+    order_details = session.exec(
+        select(OrderDetail).where(OrderDetail.order_id == order_id)
+    ).all()
+    
+    for detail in order_details:
+        session.delete(detail)
+
+    
     session.delete(order)
     session.commit()
     return {"ok": True}
