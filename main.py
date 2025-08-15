@@ -96,10 +96,15 @@ def delete_product(product_id: int, session: SessionDep):
 
 @app.patch("/products/{product_id}",response_model=ProductPublic)
 def update_product(product_id: int, product: ProductUpdate, session: SessionDep):
+    
+    product_data = product.model_dump(exclude_unset=True)
+    if not product_data:
+        raise HTTPException(status_code=422, detail="Unprocessable Entity")
+    
     product_db = session.get(Product, product_id)
     if not product_db:
         raise HTTPException(status_code=404, detail="Product not found")
-    product_data = product.model_dump(exclude_unset=True)
+    
     product_db.sqlmodel_update(product_data)
     session.add(product_db)
     session.commit()
@@ -211,6 +216,9 @@ def delete_order(order_id: int, session: SessionDep):
     ).all()
     
     for detail in order_details:
+        product = session.get(Product, detail.product_id)
+        product.stock_quantity += detail.quantity
+        session.add(product)
         session.delete(detail)
 
     
