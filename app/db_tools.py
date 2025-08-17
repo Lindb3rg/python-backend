@@ -1,5 +1,5 @@
 import random
-from model import Product
+from app.model import Product
 
 def seed_products(session):
     

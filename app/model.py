@@ -41,6 +41,23 @@ class ProductUpdate(ProductBase):
 
 
 
+# Todo!
+# class OrderBatchBase(SQLModel):
+#     created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+# class OrderBatch(OrderBatchBase, table=True):
+#     __tablename__ = "order_batch"
+#     id: int | None = Field(default=None, primary_key=True)
+#     authentication_string: str
+#     orders: list["Order"] = Relationship(back_populates="order_batch")    
+
+# class OrdersCreate(OrderBatchBase):
+#     order_list: list["OrderCreate"]
+#     authentication_string: str
+
+
+
 
 
 
@@ -48,6 +65,9 @@ class OrderBase(SQLModel):
     customer_name: str = Field(max_length=100)
     customer_email: str = Field(max_length=100)
     status: str = Field(max_length=100, default="pending")
+
+
+
     
     
 class Order(OrderBase, table=True):
@@ -58,6 +78,7 @@ class Order(OrderBase, table=True):
     authentication_string: str
     total_amount: float
     order_details: list["OrderDetail"] = Relationship(back_populates="order")
+    # order_batch_id: int = Field(foreign_key="order_batch.id")
 
 
 class OrderPublic(OrderBase):
@@ -93,9 +114,8 @@ class OrderResponse(OrderBase):
         from_attributes = True
 
 
-
-
-
+class OrdersResponse(OrderBase):
+    orders_list: list["OrderCreate"] | None = None
 
 
 
@@ -132,3 +152,6 @@ class OrderDetailUpdate(OrderDetailBase):
     quantity: int | None = None
     unit_price: float | None = None
     subtotal: float | None = None
+    
+
+

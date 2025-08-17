@@ -24,4 +24,11 @@ Table order_details {
   subtotal real [not null]
 }
 
+-- Table order_batch {
+--   id serial [pk, increment]
+--   order_id integer [ref: > order.id]
+--   created_at timestamp [default: `CURRENT_TIMESTAMP`]
+  
+-- }
+
 
