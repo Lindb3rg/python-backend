@@ -1,8 +1,5 @@
-
 from datetime import datetime, date
 from sqlmodel import Field, SQLModel, Relationship
-
-
 
 
 class ProductBase(SQLModel):
@@ -14,7 +11,7 @@ class ProductBase(SQLModel):
 
 
 class Product(ProductBase, table=True):
-    __tablename__ = "product"    
+    __tablename__ = "product"
     id: int | None = Field(default=None, primary_key=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
@@ -40,7 +37,6 @@ class ProductUpdate(ProductBase):
     out_of_stock: bool | None = None
 
 
-
 # Todo!
 # class OrderBatchBase(SQLModel):
 #     created_at: datetime = Field(default_factory=datetime.utcnow)
@@ -50,15 +46,11 @@ class ProductUpdate(ProductBase):
 #     __tablename__ = "order_batch"
 #     id: int | None = Field(default=None, primary_key=True)
 #     authentication_string: str
-#     orders: list["Order"] = Relationship(back_populates="order_batch")    
+#     orders: list["Order"] = Relationship(back_populates="order_batch")
 
 # class OrdersCreate(OrderBatchBase):
 #     order_list: list["OrderCreate"]
 #     authentication_string: str
-
-
-
-
 
 
 class OrderBase(SQLModel):
@@ -67,9 +59,6 @@ class OrderBase(SQLModel):
     status: str = Field(max_length=100, default="pending")
 
 
-
-    
-    
 class Order(OrderBase, table=True):
     __tablename__ = "order"
     id: int | None = Field(default=None, primary_key=True)
@@ -85,7 +74,7 @@ class OrderPublic(OrderBase):
     id: int
     total_amount: float
     order_details: list
-    
+
 
 class OrderCreate(OrderBase):
     items: list["OrderDetailRequest"]
@@ -109,14 +98,13 @@ class OrderResponse(OrderBase):
     total_amount: float
     order_date: datetime
     authentication_string: str
-    
+
     class Config:
         from_attributes = True
 
 
 class OrdersResponse(OrderBase):
     orders_list: list["OrderCreate"] | None = None
-
 
 
 class OrderDetailBase(SQLModel):
@@ -128,8 +116,8 @@ class OrderDetailBase(SQLModel):
 class OrderDetailRequest(SQLModel):
     product_id: int
     quantity: int
-    
-    
+
+
 class OrderDetail(OrderDetailBase, table=True):
     __tablename__ = "order_details"
     id: int | None = Field(default=None, primary_key=True)
@@ -141,7 +129,7 @@ class OrderDetail(OrderDetailBase, table=True):
 
 class OrderDetailPublic(OrderDetailBase):
     id: int
-    
+
 
 class OrderDetailCreate(OrderDetailBase):
     product_id: int
@@ -152,6 +140,3 @@ class OrderDetailUpdate(OrderDetailBase):
     quantity: int | None = None
     unit_price: float | None = None
     subtotal: float | None = None
-    
-
-
