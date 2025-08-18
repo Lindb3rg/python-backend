@@ -6,6 +6,10 @@ from sqlmodel import create_engine, SQLModel, Session, select
 from app.db_tools import seed_products
 
 from app.model import (
+    OrderBatch,
+    OrderBatchCreate,
+    OrderBatchResponse,
+    OrderResponse,
     Product,
     ProductCreate,
     ProductPublic,
@@ -112,153 +116,6 @@ def update_product(product_id: int, product: ProductUpdate, session: SessionDep)
     return product_db
 
 
-@app.post("/orders/", response_model=OrderResponse)
-def create_order(order_data: OrderCreate, session: SessionDep):
-
-    print("order data: ", order_data)
-    print("order data: ", type(order_data))
-
-    total_amount = 0.0
-    order_items_data = []
-
-    for item in order_data.items:
-
-        product = session.get(Product, item.product_id)
-        if not product:
-            raise HTTPException(
-                status_code=404, detail=f"Product with ID {item.product_id} not found"
-            )
-
-        if product.stock_quantity < item.quantity:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Insufficient stock for {product.name}. Available: {product.stock_quantity}, Requested: {item.quantity}",
-            )
-
-        subtotal = product.unit_price * item.quantity
-        total_amount += subtotal
-
-        order_items_data.append(
-            {
-                "product": product,
-                "quantity": item.quantity,
-                "unit_price": product.unit_price,
-                "subtotal": subtotal,
-            }
-        )
-
-    try:
-
-        new_order = Order(
-            customer_name=order_data.customer_name,
-            customer_email=order_data.customer_email,
-            status="pending",
-            authentication_string=order_data.authentication_string,
-            total_amount=total_amount,
-        )
-
-        session.add(new_order)
-        session.flush()
-
-        for item_data in order_items_data:
-            order_item = OrderDetail(
-                order_id=new_order.id,
-                product_id=item_data["product"].id,
-                quantity=item_data["quantity"],
-                unit_price=item_data["unit_price"],
-                subtotal=item_data["subtotal"],
-            )
-            session.add(order_item)
-
-        for item_data in order_items_data:
-            product = item_data["product"]
-            product.stock_quantity -= item_data["quantity"]
-            product.updated_at = datetime.utcnow()
-
-        session.commit()
-        session.refresh(new_order)
-
-        return new_order
-
-    except Exception as e:
-        session.rollback()
-        raise HTTPException(status_code=500, detail=f"Failed to create order: {str(e)}")
-
-
-# @app.post("/multple-orders/", response_model=OrdersResponse)
-# def create_orders(orders_data: OrdersCreate, session: SessionDep):
-
-#     breakpoint()
-#     print(">>>>>>>>>> ORDERS DATA: ",orders_data)
-
-
-#     for order in orders_data.order_list:
-
-
-#         total_amount = 0.0
-#         order_items_data = []
-
-#         for item in order.items:
-
-#             product = session.get(Product, item.product_id)
-#             if not product:
-#                 raise HTTPException(status_code=404, detail=f"Product with ID {item.product_id} not found")
-
-#             if product.stock_quantity < item.quantity:
-#                 raise HTTPException(
-#                     status_code=400,
-#                     detail=f"Insufficient stock for {product.name}. Available: {product.stock_quantity}, Requested: {item.quantity}"
-#                 )
-
-#             subtotal = product.unit_price * item.quantity
-#             total_amount += subtotal
-
-#             order_items_data.append({
-#                 "product": product,
-#                 "quantity": item.quantity,
-#                 "unit_price": product.unit_price,
-#                 "subtotal": subtotal
-#             })
-
-#         try:
-
-#             new_order = Order(
-#                 customer_name=order.customer_name,
-#                 customer_email=order.customer_email,
-#                 status="pending",
-#                 authentication_string=order.authentication_string,
-#                 total_amount=total_amount
-#             )
-
-
-#             session.add(new_order)
-#             session.flush()
-
-
-#             for item_data in order_items_data:
-#                 order_item = OrderDetail(
-#                     order_id=new_order.id,
-#                     product_id=item_data["product"].id,
-#                     quantity=item_data["quantity"],
-#                     unit_price=item_data["unit_price"],
-#                     subtotal=item_data["subtotal"]
-#                 )
-#                 session.add(order_item)
-
-
-#             for item_data in order_items_data:
-#                 product = item_data["product"]
-#                 product.stock_quantity -= item_data["quantity"]
-#                 product.updated_at = datetime.utcnow()
-
-#             session.commit()
-#             session.refresh(new_order)
-
-#             return new_order
-
-#         except Exception as e:
-#             session.rollback()
-#             raise HTTPException(status_code=500, detail=f"Failed to create order: {str(e)}")
 
 
 @app.get("/orders/", response_model=list[OrderPublic])
@@ -316,3 +173,101 @@ def update_order(order_id: int, order: OrderUpdate, session: SessionDep):
     session.commit()
     session.refresh(order_db)
     return order_db
+
+
+
+@app.post("/orders/", response_model=OrderBatchResponse)
+def create_order_batch(orders_data: OrderBatchCreate, session: SessionDep):
+
+    order_batch = OrderBatch(
+        authentication_string=orders_data.authentication_string
+    )
+    breakpoint()
+    
+    
+    session.add(order_batch)
+    session.flush()
+    print(order_batch.id)
+    created_orders = []
+
+    try:
+        
+        for order in orders_data.order_list:
+
+
+            total_amount = 0.0
+            order_items_data = []
+
+            for item in order.items:
+
+                product = session.get(Product, item.product_id)
+                if not product:
+                    raise HTTPException(status_code=404, detail=f"Product with ID {item.product_id} not found")
+
+                if product.stock_quantity < item.quantity:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Insufficient stock for {product.name}. Available: {product.stock_quantity}, Requested: {item.quantity}"
+                    )
+
+                subtotal = product.unit_price * item.quantity
+                total_amount += subtotal
+
+                order_items_data.append({
+                    "product": product,
+                    "quantity": item.quantity,
+                    "unit_price": product.unit_price,
+                    "subtotal": subtotal
+                })
+
+            try:
+
+                new_order = Order(
+                    customer_name=order.customer_name,
+                    customer_email=order.customer_email,
+                    status="pending",
+                    authentication_string=order.authentication_string,
+                    total_amount=total_amount,
+                    order_batch_id=order_batch.id
+                )
+
+
+                session.add(new_order)
+                session.flush()
+
+
+                for item_data in order_items_data:
+                    order_item = OrderDetail(
+                        order_id=new_order.id,
+                        product_id=item_data["product"].id,
+                        quantity=item_data["quantity"],
+                        unit_price=item_data["unit_price"],
+                        subtotal=item_data["subtotal"]
+                    )
+                    session.add(order_item)
+
+
+                for item_data in order_items_data:
+                    product = item_data["product"]
+                    product.stock_quantity -= item_data["quantity"]
+                    product.updated_at = datetime.utcnow()
+
+                created_orders.append(new_order)
+                
+
+            except Exception as e:
+                session.rollback()
+                raise HTTPException(status_code=500, detail=f"Failed to create order: {str(e)}")
+        
+        session.commit()
+        session.refresh(order_batch)
+        for order in created_orders:
+            session.refresh(order)
+
+        return order_batch
+    
+    
+    
+    except Exception as e:
+        session.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to create order batch: {str(e)}")

@@ -6,6 +6,12 @@ Table product {
   updated_at timestamp [default: `CURRENT_TIMESTAMP`]
 }
 
+Table order_batch {
+  id serial [pk, increment]
+  created_at timestamp [default: `CURRENT_TIMESTAMP`]
+  authentication_string varchar(255) [not null]
+}
+
 Table order {
   id serial [pk, increment]
   customer_name varchar(100) [not null]
@@ -24,11 +30,6 @@ Table order_details {
   subtotal real [not null]
 }
 
--- Table order_batch {
---   id serial [pk, increment]
---   order_id integer [ref: > order.id]
---   created_at timestamp [default: `CURRENT_TIMESTAMP`]
-  
--- }
+
 
 

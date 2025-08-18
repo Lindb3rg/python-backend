@@ -2,6 +2,7 @@ from datetime import datetime, date
 from sqlmodel import Field, SQLModel, Relationship
 
 
+
 class ProductBase(SQLModel):
     name: str = Field(max_length=255, index=True)
     category: str = Field(max_length=255, index=True)
@@ -37,20 +38,30 @@ class ProductUpdate(ProductBase):
     out_of_stock: bool | None = None
 
 
-# Todo!
-# class OrderBatchBase(SQLModel):
-#     created_at: datetime = Field(default_factory=datetime.utcnow)
+class OrderBatchBase(SQLModel):
+    created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
-# class OrderBatch(OrderBatchBase, table=True):
-#     __tablename__ = "order_batch"
-#     id: int | None = Field(default=None, primary_key=True)
-#     authentication_string: str
-#     orders: list["Order"] = Relationship(back_populates="order_batch")
+class OrderBatch(OrderBatchBase, table=True):
+    __tablename__ = "order_batch"
+    id: int | None = Field(default=None, primary_key=True)
+    authentication_string: str
+    orders: list["Order"] = Relationship(back_populates="order_batch")
+    
 
-# class OrdersCreate(OrderBatchBase):
-#     order_list: list["OrderCreate"]
-#     authentication_string: str
+class OrderBatchCreate(OrderBatchBase):
+    order_list: list["OrderCreate"]
+    authentication_string: str
+
+
+class OrderBatchResponse(OrderBatchBase):
+    id: int
+    authentication_string: str
+    orders: list["OrderResponse"] = []
+
+
+
+
 
 
 class OrderBase(SQLModel):
@@ -67,7 +78,9 @@ class Order(OrderBase, table=True):
     authentication_string: str
     total_amount: float
     order_details: list["OrderDetail"] = Relationship(back_populates="order")
-    # order_batch_id: int = Field(foreign_key="order_batch.id")
+    order_batch: OrderBatch = Relationship(back_populates="orders")
+    order_batch_id: int = Field(foreign_key="order_batch.id")
+    
 
 
 class OrderPublic(OrderBase):
@@ -103,8 +116,16 @@ class OrderResponse(OrderBase):
         from_attributes = True
 
 
-class OrdersResponse(OrderBase):
-    orders_list: list["OrderCreate"] | None = None
+class OrderResponse(OrderBase):
+    id: int
+    order_date: date
+    updated_at: datetime
+    total_amount: float
+    order_batch_id: int
+    order_details: list["OrderDetailResponse"] = []
+
+
+
 
 
 class OrderDetailBase(SQLModel):
@@ -117,6 +138,11 @@ class OrderDetailRequest(SQLModel):
     product_id: int
     quantity: int
 
+class OrderDetailResponse(OrderDetailBase):
+    id: int
+    product_id: int
+    order_id: int
+    product: "ProductPublic"
 
 class OrderDetail(OrderDetailBase, table=True):
     __tablename__ = "order_details"
