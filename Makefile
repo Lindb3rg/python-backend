@@ -16,3 +16,6 @@ lint:
 
 dev: format lint test
 	@echo "✅ All checks passed!"
+
+rundev:
+	fastapi dev  app/app.py

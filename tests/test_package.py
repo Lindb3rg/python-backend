@@ -1,7 +1,7 @@
 def test_app_imports():
     """Test that main modules can be imported."""
     import app
-    import app.main
+    import app.app
     import app.db_tools
     import app.model
 

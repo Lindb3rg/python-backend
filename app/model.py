@@ -2,7 +2,6 @@ from datetime import datetime, date
 from sqlmodel import Field, SQLModel, Relationship
 
 
-
 class ProductBase(SQLModel):
     name: str = Field(max_length=255, index=True)
     category: str = Field(max_length=255, index=True)
@@ -47,7 +46,7 @@ class OrderBatch(OrderBatchBase, table=True):
     id: int | None = Field(default=None, primary_key=True)
     authentication_string: str
     orders: list["Order"] = Relationship(back_populates="order_batch")
-    
+
 
 class OrderBatchCreate(OrderBatchBase):
     order_list: list["OrderCreate"]
@@ -58,10 +57,6 @@ class OrderBatchResponse(OrderBatchBase):
     id: int
     authentication_string: str
     orders: list["OrderResponse"] = []
-
-
-
-
 
 
 class OrderBase(SQLModel):
@@ -80,7 +75,6 @@ class Order(OrderBase, table=True):
     order_details: list["OrderDetail"] = Relationship(back_populates="order")
     order_batch: OrderBatch = Relationship(back_populates="orders")
     order_batch_id: int = Field(foreign_key="order_batch.id")
-    
 
 
 class OrderPublic(OrderBase):
@@ -125,9 +119,6 @@ class OrderResponse(OrderBase):
     order_details: list["OrderDetailResponse"] = []
 
 
-
-
-
 class OrderDetailBase(SQLModel):
     quantity: int
     unit_price: float
@@ -138,11 +129,13 @@ class OrderDetailRequest(SQLModel):
     product_id: int
     quantity: int
 
+
 class OrderDetailResponse(OrderDetailBase):
     id: int
     product_id: int
     order_id: int
     product: "ProductPublic"
+
 
 class OrderDetail(OrderDetailBase, table=True):
     __tablename__ = "order_details"
