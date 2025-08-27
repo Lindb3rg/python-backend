@@ -9,7 +9,6 @@ Table product {
 Table order_batch {
   id serial [pk, increment]
   created_at timestamp [default: `CURRENT_TIMESTAMP`]
-  authentication_string varchar(255) [not null]
 }
 
 Table order {

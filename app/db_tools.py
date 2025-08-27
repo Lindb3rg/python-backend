@@ -112,7 +112,6 @@ def seed_products(session):
             unit_price=product_data["unit_price"],
             stock_quantity=product_data["quantity"],
             out_of_stock=product_data["quantity"] == 0,
-            authentication_string=f"auth_{random.randint(1000, 9999)}",
         )
         session.add(product)
 

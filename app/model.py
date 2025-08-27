@@ -15,7 +15,6 @@ class Product(ProductBase, table=True):
     id: int | None = Field(default=None, primary_key=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
-    authentication_string: str
     order_details: list["OrderDetail"] = Relationship(back_populates="product")
 
 
@@ -24,7 +23,10 @@ class ProductPublic(ProductBase):
 
 
 class ProductCreate(ProductBase):
-    authentication_string: str
+    name: str
+    category: str
+    unit_price: float
+    stock_quantity: int
 
 
 class ProductUpdate(ProductBase):
@@ -33,7 +35,6 @@ class ProductUpdate(ProductBase):
     unit_price: float | None = None
     stock_quantity: int | None = None
     updated_at: datetime | None = None
-    authentication_string: str | None = None
     out_of_stock: bool | None = None
 
 
@@ -44,18 +45,15 @@ class OrderBatchBase(SQLModel):
 class OrderBatch(OrderBatchBase, table=True):
     __tablename__ = "order_batch"
     id: int | None = Field(default=None, primary_key=True)
-    authentication_string: str
     orders: list["Order"] = Relationship(back_populates="order_batch")
 
 
 class OrderBatchCreate(OrderBatchBase):
     order_list: list["OrderCreate"]
-    authentication_string: str
 
 
 class OrderBatchResponse(OrderBatchBase):
     id: int
-    authentication_string: str
     orders: list["OrderResponse"] = []
 
 
@@ -70,7 +68,6 @@ class Order(OrderBase, table=True):
     id: int | None = Field(default=None, primary_key=True)
     order_date: date = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
-    authentication_string: str
     total_amount: float
     order_details: list["OrderDetail"] = Relationship(back_populates="order")
     order_batch: OrderBatch = Relationship(back_populates="orders")
@@ -85,7 +82,6 @@ class OrderPublic(OrderBase):
 
 class OrderCreate(OrderBase):
     items: list["OrderDetailRequest"]
-    authentication_string: str
 
 
 class OrderUpdate(OrderBase):
@@ -93,7 +89,6 @@ class OrderUpdate(OrderBase):
     customer_email: str | None = None
     status: str | None = None
     updated_at: datetime | None = None
-    authentication_string: str | None = None
     total_amount: float | None = None
 
 
@@ -104,7 +99,6 @@ class OrderResponse(OrderBase):
     status: str
     total_amount: float
     order_date: datetime
-    authentication_string: str
 
     class Config:
         from_attributes = True

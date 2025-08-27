@@ -12,8 +12,7 @@
         "product_id": 1,
         "quantity": 25
       }
-    ],
-    "authentication_string": "auth_1234"
+    ]
   },
   {
     "customer_name": "Sarah Mitchell",
@@ -32,8 +31,7 @@
         "product_id": 13,
         "quantity": 2
       }
-    ],
-    "authentication_string": "auth_5678"
+    ]
   },
   {
     "customer_name": "Michael Chen",
@@ -48,8 +46,7 @@
         "product_id": 5,
         "quantity": 100
       }
-    ],
-    "authentication_string": "auth_9012"
+    ]
   },
   {
     "customer_name": "Emily Rodriguez",
@@ -68,8 +65,7 @@
         "product_id": 9,
         "quantity": 12
       }
-    ],
-    "authentication_string": "auth_3456"
+    ]
   },
   {
     "customer_name": "David Thompson",
@@ -80,8 +76,7 @@
         "product_id": 14,
         "quantity": 8
       }
-    ],
-    "authentication_string": "auth_7890"
+    ]
   },
   {
     "customer_name": "Lisa Wang",
@@ -100,8 +95,7 @@
         "product_id": 11,
         "quantity": 8
       }
-    ],
-    "authentication_string": "auth_2345"
+    ]
   },
   {
     "customer_name": "Robert Brown",
@@ -116,8 +110,7 @@
         "product_id": 16,
         "quantity": 40
       }
-    ],
-    "authentication_string": "auth_6789"
+    ]
   },
   {
     "customer_name": "Jennifer Lee",
@@ -136,8 +129,7 @@
         "product_id": 6,
         "quantity": 25
       }
-    ],
-    "authentication_string": "auth_0123"
+    ]
   },
   {
     "customer_name": "Carlos Martinez",
@@ -152,8 +144,8 @@
         "product_id": 8,
         "quantity": 45
       }
-    ],
-    "authentication_string": "auth_4567"
+    ]
+    
   },
   {
     "customer_name": "Amanda Foster",
@@ -172,7 +164,7 @@
         "product_id": 5,
         "quantity": 75
       }
-    ],
-    "authentication_string": "auth_8901"
+    ]
+    
   }
 ]
