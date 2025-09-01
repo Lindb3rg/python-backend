@@ -61,7 +61,6 @@ def get_product(current_product):
     return product
 
 
-
 def delete_product(product):
     session = product["session"]
     product_id = product["product_id"]
