@@ -126,7 +126,6 @@ def read_products(
         "session": session,
         "offset": offset,
         "limit": limit,
-        "current_user": current_user,
         "operation": model_operation.LIST,
         "model_type": model_type.PRODUCT,
     }
@@ -141,17 +140,13 @@ def read_product(
 
     product = {
         "session": session,
-        "current_user": current_user,
         "operation": model_operation.GET,
         "model_type": model_type.PRODUCT,
         "product_id": product_id,
     }
 
     product = operation_router(**product)
-    if not product:
-        logger.warning(f"Product {product_id} not found")
-        raise HTTPException(status_code=404, detail="Product not found")
-    return product
+    
 
 
 @app.delete("/products/{product_id}")
@@ -180,13 +175,16 @@ def update_product(
     product = {
         "update_product": product,
         "session": session,
-        "current_user": current_user,
         "operation": model_operation.UPDATE,
         "model_type": model_type.PRODUCT,
         "product_id": product_id,
     }
 
     return operation_router(**product)
+
+
+
+
 
 
 @app.get("/orders/", response_model=list[OrderPublic])
