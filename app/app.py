@@ -246,6 +246,9 @@ def read_order(
     return order
 
 
+
+
+
 @app.delete("/orders/{order_id}")
 def delete_order(
     order_id: int, session: SessionDep, current_user: User = Depends(get_current_user)
@@ -322,6 +325,7 @@ def create_order_batch(
     session: SessionDep,
     current_user: User = Depends(get_current_user),
 ):
+
 
     logger.info(f"Creating order batch with {len(orders_data.order_list)} orders")
 

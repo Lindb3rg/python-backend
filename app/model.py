@@ -78,6 +78,8 @@ class OrderPublic(OrderBase):
     id: int
     total_amount: float
     order_details: list
+    order_batch_id: int
+    order_date: date
 
 
 class OrderCreate(OrderBase):

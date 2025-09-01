@@ -16,6 +16,9 @@ venv/
 .env
 .venv
 
+# DB
+*.db
+
 # IDE
 .vscode/
 .idea/
@@ -37,3 +40,4 @@ requirements.txt  # If you're using setup.py as source of truth
 # Logs
 *.log
 att-göra.txt
+
