@@ -8,6 +8,7 @@ class ProductBase(SQLModel):
     unit_price: float = 0
     stock_quantity: int = 0
     out_of_stock: bool = False
+    type: str = "product"
 
 
 class Product(ProductBase, table=True):
@@ -40,6 +41,7 @@ class ProductUpdate(ProductBase):
 
 class OrderBatchBase(SQLModel):
     created_at: datetime = Field(default_factory=datetime.utcnow)
+    type: str = "order_batch"
 
 
 class OrderBatch(OrderBatchBase, table=True):

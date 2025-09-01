@@ -7,11 +7,13 @@ from sqlmodel import create_engine, SQLModel, Session, select
 from fastapi.middleware.cors import CORSMiddleware
 
 
+from app.model_operations_manager import operation_router
 from app.auth_client import User, get_current_user
 from app.db_tools import seed_products
 
-from .logging_config import setup_logging, app_logger as logger
 
+from .logging_config import app_logger as logger
+from .model_operations_manager import ModelType, Operation
 
 from app.model import (
     OrderBatch,
@@ -26,6 +28,9 @@ from app.model import (
     OrderUpdate,
     OrderDetail,
 )
+
+model_operation = Operation
+model_type = ModelType
 
 
 sqlite_file_name = "database.db"
@@ -81,7 +86,7 @@ def get_current_user_info(current_user: User = Depends(get_current_user)):
 
 
 @app.get("/categories/", response_model=list[str])
-def get_categories(session: SessionDep,current_user: User = Depends(get_current_user)):
+def get_categories(session: SessionDep, current_user: User = Depends(get_current_user)):
     categories = session.exec(
         select(Product.category).where(Product.category.is_not(None)).distinct()
     ).all()
@@ -94,33 +99,19 @@ def create_product(
     session: SessionDep,
     current_user: User = Depends(get_current_user),
 ):
-
-    product = Product.model_validate(create_product, strict=True)
-
-    existing_product = session.exec(
-        select(Product).where(Product.name == product.name)
-    ).first()
-
-    if existing_product:
-        logger.warning(f"Product '{product.name}' already exists")
-        raise HTTPException(
-            status_code=409, detail=f"Product '{product.name}' already exists"
-        )
+    new_product = {
+        "create_product": create_product,
+        "session": session,
+        "current_user": current_user,
+        "operation": model_operation.POST,
+        "model_type": model_type.PRODUCT,
+    }
 
     try:
-        session.add(product)
-        session.commit()
-        session.refresh(product)
-        logger.success(
-            f"Product '{product.name}' created by {current_user.email}", 
-            extra={"product_id": product.id, "user_email": current_user.email}
-        )
+        product = operation_router(**new_product)
         return product
-
     except Exception as e:
-        session.rollback()
-        logger.error(f"Database error creating product: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to create product")
+        logger.error(f"Failed to create product: {str(e)}")
 
 
 @app.get("/products/", response_model=list[ProductPublic])
@@ -130,19 +121,33 @@ def read_products(
     limit: Annotated[int, Query(le=100)] = 100,
     current_user: User = Depends(get_current_user),
 ):
-    products = session.exec(select(Product).offset(offset).limit(limit)).all()
-    logger.info(
-        f"Retrieved {len(products)} products",
-        extra={"count": len(products), "offset": offset, "limit": limit},
-    )
-    return products
+
+    products = {
+        "session": session,
+        "offset": offset,
+        "limit": limit,
+        "current_user": current_user,
+        "operation": model_operation.LIST,
+        "model_type": model_type.PRODUCT,
+    }
+
+    return operation_router(**products)
 
 
 @app.get("/products/{product_id}", response_model=ProductPublic)
 def read_product(
     product_id: int, session: SessionDep, current_user: User = Depends(get_current_user)
 ) -> Product:
-    product = session.get(Product, product_id)
+
+    product = {
+        "session": session,
+        "current_user": current_user,
+        "operation": model_operation.GET,
+        "model_type": model_type.PRODUCT,
+        "product_id": product_id,
+    }
+
+    product = operation_router(**product)
     if not product:
         logger.warning(f"Product {product_id} not found")
         raise HTTPException(status_code=404, detail="Product not found")
@@ -153,27 +158,15 @@ def read_product(
 def delete_product(
     product_id: int, session: SessionDep, current_user: User = Depends(get_current_user)
 ):
-    product = session.get(Product, product_id)
-    if not product:
-        logger.warning(f"Product {product_id} not found for deletion")
-        raise HTTPException(status_code=404, detail="Product not found")
 
-    try:
-        product_name = product.name
-        session.delete(product)
-        session.commit()
-        logger.success(
-            f"Product '{product_name}' deleted successfully",
-            extra={"product_id": product_id},
-        )
-        return {"ok": True}
+    product = {
+        "session": session,
+        "operation": model_operation.DELETE,
+        "model_type": model_type.PRODUCT,
+        "product_id": product_id,
+    }
 
-    except Exception as e:
-        session.rollback()
-        logger.error(f"Failed to delete product: {str(e)}")
-        raise HTTPException(
-            status_code=500, detail=f"Failed to delete product: {str(e)}"
-        )
+    return operation_router(**product)
 
 
 @app.patch("/products/{product_id}", response_model=ProductPublic)
@@ -184,33 +177,16 @@ def update_product(
     current_user: User = Depends(get_current_user),
 ):
 
-    product_data = product.model_dump(exclude_unset=True)
-    if not product_data:
-        logger.warning(
-            f"No data provided for product update", extra={"product_id": product_id}
-        )
-        raise HTTPException(status_code=422, detail="Unprocessable Entity")
+    product = {
+        "update_product": product,
+        "session": session,
+        "current_user": current_user,
+        "operation": model_operation.UPDATE,
+        "model_type": model_type.PRODUCT,
+        "product_id": product_id,
+    }
 
-    product_db = session.get(Product, product_id)
-    if not product_db:
-        logger.warning(f"Product {product_id} not found for update")
-        raise HTTPException(status_code=404, detail="Product not found")
-
-    try:
-        product_db.sqlmodel_update(product_data)
-        session.commit()
-        session.refresh(product_db)
-        logger.success(
-            f"Updated product successfully", extra={"product_id": product_db.id}
-        )
-        return product_db
-
-    except Exception as e:
-        session.rollback()
-        logger.error(f"Failed to update product: {str(e)}")
-        raise HTTPException(
-            status_code=500, detail=f"Failed to update product: {str(e)}"
-        )
+    return operation_router(**product)
 
 
 @app.get("/orders/", response_model=list[OrderPublic])
@@ -244,9 +220,6 @@ def read_order(
 
     logger.info(f"Order {order_id} retrieved successfully")
     return order
-
-
-
 
 
 @app.delete("/orders/{order_id}")
@@ -326,8 +299,8 @@ def create_order_batch(
     current_user: User = Depends(get_current_user),
 ):
 
-
     logger.info(f"Creating order batch with {len(orders_data.order_list)} orders")
+    logger.info(f"checking table: {order_batch.__tablename_}")
 
     order_batch = OrderBatch()
     session.add(order_batch)
